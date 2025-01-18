@@ -1,4 +1,4 @@
-import { fullBlog } from "@/app/lib/interface";
+import { FullBlog } from "@/app/lib/interface";
 import { client, urlFor } from "@/app/lib/sanity";
 import { PortableText } from "next-sanity";
 import Image from "next/image";
@@ -37,7 +37,7 @@ export default async function BlogArticle({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const data: fullBlog = await getData(slug);
+  const data: FullBlog = await getData(slug);
  
   const date = new Date(data.publishedAt).toLocaleDateString('en-US', {
     year: 'numeric',

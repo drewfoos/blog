@@ -5,19 +5,31 @@ export interface Category {
     color: string;
 }
 
-export interface simpleBlogCard {
-    title: string;
-    smallDescription: string;
-    currentSlug: string;
-    titleImage: any;
-    publishedAt: string;
-    category?: {
-        title: string;
-        color: string;
-        slug: string;
+interface SanityImage {
+    _type: 'image';
+    asset: {
+        _ref: string;
+        _type: 'reference';
     };
 }
 
-export interface fullBlog extends Omit<simpleBlogCard, 'smallDescription'> {
-    content: any;
+export interface SimpleBlogCard {
+    title: string;
+    smallDescription: string;
+    currentSlug: string;
+    titleImage: SanityImage;
+    publishedAt: string;
+    category?: Category;
+}
+
+export interface FullBlog extends Omit<SimpleBlogCard, 'smallDescription'> {
+    content: {
+        _type: string;
+        children: Array<{
+            _key: string;
+            _type: string;
+            marks: string[];
+            text: string;
+        }>;
+    }[];
 }
