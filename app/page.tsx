@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 import NewsletterForm from "@/app/components/NewsletterForm";
+import { ReactElement } from "react";
 
 export const revalidate = 30;
 
@@ -21,7 +22,7 @@ async function getData(): Promise<SimpleBlogCard[]> {
   return data;
 }
 
-export default async function Home(): Promise<JSX.Element> {
+export default async function Home(): Promise<ReactElement> {
   const data: SimpleBlogCard[] = await getData();
 
   if (!data || data.length === 0) {
