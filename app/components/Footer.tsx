@@ -21,7 +21,7 @@ export default function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {/* About Section */}
           <div className="space-y-3">
-            <h3 className="text-lg font-semibold">About Andrew's Blog</h3>
+            <h3 className="text-lg font-semibold">About Andrew&apos;s Blog</h3>
             <p className="text-sm text-muted-foreground">
               Sharing insights and experiences in technology, development, and digital innovation.
             </p>
@@ -79,7 +79,7 @@ export default function Footer() {
         </div>
         
         <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Andrew's Blog. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Andrew&apos;s Blog. All rights reserved.</p>
         </div>
       </div>
     </footer>

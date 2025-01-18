@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { 
     Gamepad2, 
@@ -12,7 +12,6 @@ import {
     Linkedin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { TextAdventure } from "@/app/components/TextAdventure/TextAdventure";
 
 export default function AboutPage() {
     return (
@@ -20,7 +19,7 @@ export default function AboutPage() {
             {/* Hero Section */}
             <section className="text-center space-y-6">
                 <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-primary/50 bg-clip-text">
-                    Hey, I'm Andrew 👋
+                    Hey, I&apos;m Andrew 👋
                 </h1>
                 <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                     Developer by day, competitive gamer by night. 
@@ -118,7 +117,7 @@ export default function AboutPage() {
                     <div className="space-y-4">
                         <h3 className="text-xl font-semibold">College Basketball & Chess</h3>
                         <p className="text-lg text-muted-foreground leading-relaxed">
-                            Beyond tech and gaming, I'm passionate about college basketball and chess. 
+                            Beyond tech and gaming, I&apos;m passionate about college basketball and chess. 
                             These interests contribute to my strategic approach in both gaming and development, 
                             where pattern recognition and tactical thinking are key.
                         </p>
