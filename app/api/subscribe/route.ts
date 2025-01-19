@@ -3,12 +3,27 @@ import { client } from "@/app/lib/sanity";
 import { NextResponse } from "next/server";
 import { Resend } from 'resend';
 
+// Define error interfaces
+interface ResendError {
+  statusCode: number;
+  name: string;
+  message: string;
+}
+
+interface SanityError {
+  name: string;
+  message: string;
+  details?: unknown;
+}
+
+type SubscriptionError = ResendError | SanityError | Error;
+
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
   try {
     const { email } = await req.json();
-
+    
     // Basic email validation
     if (!email || !email.includes('@')) {
       return NextResponse.json(
@@ -69,10 +84,12 @@ export async function POST(req: Request) {
       { message: 'Successfully subscribed!' },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error('Subscription error:', error);
+  } catch (error: unknown) {
+    const typedError = error as SubscriptionError;
+    console.error('Subscription error:', typedError);
+    
     return NextResponse.json(
-      { message: error.message || 'Error subscribing to newsletter' },
+      { message: typedError.message || 'Error subscribing to newsletter' },
       { status: 500 }
     );
   }

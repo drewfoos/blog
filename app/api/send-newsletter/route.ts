@@ -13,7 +13,7 @@ interface ResendError {
   message: string;
 }
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     // Get latest blog post for test
     const latestPost = await client.fetch(`
@@ -85,7 +85,6 @@ To unsubscribe, reply to this email.
     // Send emails in batches
     for (let i = 0; i < subscribers.length; i += BATCH_SIZE) {
       const batch = subscribers.slice(i, i + BATCH_SIZE);
-      console.log(`Sending batch ${Math.floor(i / BATCH_SIZE) + 1} of ${Math.ceil(subscribers.length / BATCH_SIZE)}`);
       
       try {
         await resend.emails.send({
