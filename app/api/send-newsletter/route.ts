@@ -186,7 +186,7 @@ export async function POST(req: Request) {
             );
 
             await resend.emails.send({
-              from: "Drew's Foos Blog <newsletter@drewfoosblog.vercel.app>",
+              from: "Drewfoos Blog <drewfoosblog@gmail.com>",
               to: subscriber.email,
               subject: `New Post: ${latestPost.title}`,
               html,

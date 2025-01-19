@@ -12,7 +12,7 @@ const getEmailTemplate = (email: string, unsubscribeToken: string) => `
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to Drew's Foos Blog</title>
+  <title>Welcome to DrewFoos Blog</title>
 </head>
 <body style="
   margin: 0;
@@ -30,17 +30,13 @@ const getEmailTemplate = (email: string, unsubscribeToken: string) => `
   ">
     <div style="text-align: center; margin-bottom: 30px;">
       <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 10px;">
-        Welcome to Drew's Foos Blog! 🎉
+        Welcome to DrewFoos Blog! 🎉
       </h1>
-      <p style="color: #666; font-size: 16px; line-height: 1.5;">
-        Thanks for joining our foosball community!
-      </p>
     </div>
 
     <div style="margin-bottom: 30px;">
       <p style="color: #444; font-size: 16px; line-height: 1.6;">
-        Thank you for subscribing to our newsletter. You'll receive updates 
-        about the latest foosball strategies, tips, tournament coverage, and more!
+        Thank you for subscribing! You'll receive email notifications whenever a new article is published.
       </p>
     </div>
 
@@ -52,12 +48,11 @@ const getEmailTemplate = (email: string, unsubscribeToken: string) => `
       color: #666;
       font-size: 14px;
     ">
-      <p>You're receiving this email because you subscribed to Drew's Foos Blog with: ${email}</p>
+      <p>You're receiving this email because you subscribed to DrewFoos Blog with: ${email}</p>
       <p>
-        If you wish to unsubscribe, 
         <a href="https://drewfoosblog.vercel.app/unsubscribe?email=${encodeURIComponent(email)}&token=${encodeURIComponent(unsubscribeToken)}" 
-           style="color: #0066cc; text-decoration: none;">
-          click here
+           style="color: #666; text-decoration: underline;">
+          Unsubscribe from these notifications
         </a>
       </p>
     </div>
@@ -123,13 +118,13 @@ export async function POST(req: Request) {
 
     // Send welcome email
     await resend.emails.send({
-      from: "Drew's Foos Blog <newsletter@drewfoosblog.vercel.app>",
+      from: "Drewfoos Blog <drewfoosblog@gmail.com>",
       to: normalizedEmail,
-      subject: "Welcome to Drew's Foos Blog! 🎉",
+      subject: "Welcome to DrewFoos Blog! 🎉",
       html: getEmailTemplate(normalizedEmail, unsubscribeToken),
-      text: `Welcome to Drew's Foos Blog!
+      text: `Welcome to DrewFoos Blog!
 
-Thanks for subscribing to our newsletter. You'll receive updates about the latest foosball strategies, tips, tournament coverage, and more!
+Thank you for subscribing! You'll receive email notifications whenever a new article is published.
 
 To unsubscribe, visit: https://drewfoosblog.vercel.app/unsubscribe?email=${encodeURIComponent(normalizedEmail)}&token=${encodeURIComponent(unsubscribeToken)}`,
     });
