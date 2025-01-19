@@ -118,7 +118,7 @@ export async function POST(req: Request) {
 
     // Send welcome email
     await resend.emails.send({
-      from: "Drewfoos Blog <drewfoosblog@gmail.com>",
+      from: "Drewfoos Blog <onboarding@resend.dev>",
       to: normalizedEmail,
       subject: "Welcome to DrewFoos Blog! 🎉",
       html: getEmailTemplate(normalizedEmail, unsubscribeToken),

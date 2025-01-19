@@ -33,7 +33,8 @@ export default defineType({
     defineField({
       name: 'unsubscribeToken',
       title: 'Unsubscribe Token',
-      type: 'string'
+      type: 'string',
+      description: 'Unique token used for unsubscribe verification'
     }),
     defineField({
       name: 'unsubscribedAt',
