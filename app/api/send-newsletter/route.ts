@@ -13,7 +13,18 @@ interface ResendError {
   message: string;
 }
 
-export async function GET() {
+export async function POST(req: Request) {
+  const SANITY_WEBHOOK_SECRET = process.env.SANITY_WEBHOOK_SECRET;
+
+  // Verify the webhook secret
+  const providedSecret = req.headers.get("sanity-webhook-signature");
+  if (!SANITY_WEBHOOK_SECRET || providedSecret !== SANITY_WEBHOOK_SECRET) {
+    return NextResponse.json(
+      { error: "Unauthorized request" },
+      { status: 401 }
+    );
+  }
+
   try {
     // Get latest blog post for test
     const latestPost = await client.fetch(`
@@ -33,7 +44,7 @@ export async function GET() {
     if (!subscribers || subscribers.length === 0) {
       return NextResponse.json({
         message: "No subscribers found",
-        subscriberCount: 0
+        subscriberCount: 0,
       });
     }
 
@@ -99,12 +110,12 @@ To unsubscribe, reply to this email.
         sentBatches.push({
           batchNumber: Math.floor(i / BATCH_SIZE) + 1,
           recipientCount: batch.length,
-          status: "success"
+          status: "success",
         });
 
         // Add a delay between batches
         if (i + BATCH_SIZE < subscribers.length) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       } catch (error) {
         const resendError = error as ResendError;
@@ -113,7 +124,7 @@ To unsubscribe, reply to this email.
           batchNumber: Math.floor(i / BATCH_SIZE) + 1,
           recipientCount: batch.length,
           status: "error",
-          error: resendError.message
+          error: resendError.message,
         });
       }
     }
@@ -124,8 +135,8 @@ To unsubscribe, reply to this email.
       batchResults: sentBatches,
       articleDetails: {
         title: latestPost.title,
-        slug: latestPost.currentSlug
-      }
+        slug: latestPost.currentSlug,
+      },
     });
   } catch (error) {
     const finalError = error as Error;
@@ -133,7 +144,7 @@ To unsubscribe, reply to this email.
     return NextResponse.json(
       { 
         error: finalError.message || "An unknown error occurred",
-        details: finalError.toString()
+        details: finalError.toString(),
       },
       { status: 500 }
     );
