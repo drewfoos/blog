@@ -6,87 +6,6 @@ import { randomBytes } from 'crypto';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export async function POST(req: Request) {
-  try {
-    const { email } = await req.json();
-    
-    if (!email || !email.includes('@')) {
-      return NextResponse.json(
-        { message: 'Please provide a valid email address' },
-        { status: 400 }
-      );
-    }
-
-    const normalizedEmail = email.toLowerCase().trim();
-    
-    // Check for existing subscriber
-    const existingSubscriber = await client.fetch(`
-      *[_type == "subscriber" && lower(email) == $email][0]
-    `, { email: normalizedEmail });
-
-    if (existingSubscriber) {
-      if (existingSubscriber.status === 'unsubscribed') {
-        const newToken = randomBytes(32).toString('hex');
-        await client
-          .patch(existingSubscriber._id)
-          .set({ 
-            status: 'active',
-            subscribedAt: new Date().toISOString(),
-            unsubscribeToken: newToken
-          })
-          .unset(['unsubscribedAt'])
-          .commit();
-
-        return NextResponse.json(
-          { message: 'Your subscription has been reactivated!' },
-          { status: 200 }
-        );
-      }
-      
-      return NextResponse.json(
-        { message: 'This email is already subscribed to our newsletter' },
-        { status: 400 }
-      );
-    }
-
-    // Generate token for new subscriber
-    const unsubscribeToken = randomBytes(32).toString('hex');
-
-    // Create new subscriber
-    const subscriber = await client.create({
-      _type: 'subscriber',
-      email: normalizedEmail,
-      status: 'active',
-      subscribedAt: new Date().toISOString(),
-      unsubscribeToken
-    });
-
-    // Send welcome email
-    await resend.emails.send({
-      from: "Drew's Foos Blog <newsletter@drewfoosblog.vercel.app>",
-      to: normalizedEmail,
-      subject: "Welcome to Drew's Foos Blog! 🎉",
-      html: getEmailTemplate(normalizedEmail, unsubscribeToken),
-      text: `Welcome to Drew's Foos Blog!
-
-Thanks for subscribing to our newsletter. You'll receive updates about the latest foosball strategies, tips, tournament coverage, and more!
-
-To unsubscribe, visit: https://drewfoosblog.vercel.app/unsubscribe?email=${encodeURIComponent(normalizedEmail)}&token=${encodeURIComponent(unsubscribeToken)}`,
-    });
-
-    return NextResponse.json(
-      { message: 'Successfully subscribed!' },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error('Subscription error:', error);
-    return NextResponse.json(
-      { message: 'An error occurred while processing your subscription' },
-      { status: 500 }
-    );
-  }
-}
-
 const getEmailTemplate = (email: string, unsubscribeToken: string) => `
 <!DOCTYPE html>
 <html lang="en">
@@ -146,3 +65,84 @@ const getEmailTemplate = (email: string, unsubscribeToken: string) => `
 </body>
 </html>
 `;
+
+export async function POST(req: Request) {
+  try {
+    const { email } = await req.json();
+    
+    if (!email || !email.includes('@')) {
+      return NextResponse.json(
+        { message: 'Please provide a valid email address' },
+        { status: 400 }
+      );
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    // Check for existing subscriber
+    const existingSubscriber = await client.fetch(`
+      *[_type == "subscriber" && lower(email) == $email][0]
+    `, { email: normalizedEmail });
+
+    if (existingSubscriber) {
+      if (existingSubscriber.status === 'unsubscribed') {
+        const newToken = randomBytes(32).toString('hex');
+        await client
+          .patch(existingSubscriber._id)
+          .set({ 
+            status: 'active',
+            subscribedAt: new Date().toISOString(),
+            unsubscribeToken: newToken
+          })
+          .unset(['unsubscribedAt'])
+          .commit();
+
+        return NextResponse.json(
+          { message: 'Your subscription has been reactivated!' },
+          { status: 200 }
+        );
+      }
+      
+      return NextResponse.json(
+        { message: 'This email is already subscribed to our newsletter' },
+        { status: 400 }
+      );
+    }
+
+    // Generate token for new subscriber
+    const unsubscribeToken = randomBytes(32).toString('hex');
+
+    // Create new subscriber
+    await client.create({
+      _type: 'subscriber',
+      email: normalizedEmail,
+      status: 'active',
+      subscribedAt: new Date().toISOString(),
+      unsubscribeToken
+    });
+
+    // Send welcome email
+    await resend.emails.send({
+      from: "Drew's Foos Blog <newsletter@drewfoosblog.vercel.app>",
+      to: normalizedEmail,
+      subject: "Welcome to Drew's Foos Blog! 🎉",
+      html: getEmailTemplate(normalizedEmail, unsubscribeToken),
+      text: `Welcome to Drew's Foos Blog!
+
+Thanks for subscribing to our newsletter. You'll receive updates about the latest foosball strategies, tips, tournament coverage, and more!
+
+To unsubscribe, visit: https://drewfoosblog.vercel.app/unsubscribe?email=${encodeURIComponent(normalizedEmail)}&token=${encodeURIComponent(unsubscribeToken)}`,
+    });
+
+    return NextResponse.json(
+      { message: 'Successfully subscribed!' },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Subscription error:', error);
+    return NextResponse.json(
+      { message: 'An error occurred while processing your subscription' },
+      { status: 500 }
+    );
+  }
+}
