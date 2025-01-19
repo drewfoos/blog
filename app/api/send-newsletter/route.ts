@@ -76,7 +76,7 @@ const getEmailContent = (
             Read the full article →
           </a>
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px; text-align: center;">
-            <p>You're receiving this because you subscribed to Drew's Foos Blog with: ${subscriberEmail}</p>
+            <p>You're receiving this because you subscribed to Drewfoos Blog with: ${subscriberEmail}</p>
             <p>
               <a 
                 href="https://drewfoosblog.vercel.app/unsubscribe?email=${encodeURIComponent(subscriberEmail)}&token=${encodeURIComponent(unsubscribeToken)}"

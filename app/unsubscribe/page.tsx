@@ -12,7 +12,7 @@ export default function UnsubscribePage() {
 
 function UnsubscribeLoading() {
   return (
-    <div className="max-w-xl mx-auto p-6 mt-10">
+    <div className="max-w-xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow p-6">
         <h1 className="text-2xl font-bold mb-4">Loading...</h1>
       </div>

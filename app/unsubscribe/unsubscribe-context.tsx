@@ -49,7 +49,7 @@ export default function UnsubscribeContent() {
 
   if (!email || !token) {
     return (
-      <div className="max-w-xl mx-auto p-6 mt-10">
+      <div className="max-w-xl mx-auto p-6">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
           <h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Access Denied</h1>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
