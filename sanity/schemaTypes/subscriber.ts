@@ -29,6 +29,16 @@ export default defineType({
         ]
       },
       initialValue: 'active'
+    }),
+    defineField({
+      name: 'unsubscribeToken',
+      title: 'Unsubscribe Token',
+      type: 'string'
+    }),
+    defineField({
+      name: 'unsubscribedAt',
+      title: 'Unsubscribed At',
+      type: 'datetime'
     })
   ]
 });

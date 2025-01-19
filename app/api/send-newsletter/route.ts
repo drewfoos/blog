@@ -7,14 +7,17 @@ import { isValidSignature, SIGNATURE_HEADER_NAME } from "@sanity/webhook";
 const resend = new Resend(process.env.RESEND_API_KEY);
 const BATCH_SIZE = 50;
 
-// Define error type
+interface Subscriber {
+  email: string;
+  unsubscribeToken: string;
+}
+
 interface ResendError {
   statusCode: number;
   name: string;
   message: string;
 }
 
-// Utility to read the raw request body
 const buffer = async (readable: ReadableStream | null): Promise<Buffer> => {
   const reader = readable?.getReader();
   const chunks = [];
@@ -26,10 +29,59 @@ const buffer = async (readable: ReadableStream | null): Promise<Buffer> => {
   return Buffer.concat(chunks);
 };
 
+const getEmailContent = (
+  post: { title: string; smallDescription: string; currentSlug: string; titleImage: any },
+  imageUrl: string,
+  subscriberEmail: string,
+  unsubscribeToken: string
+) => {
+  const html = `
+    <div style="max-width: 600px; margin: 0 auto; font-family: system-ui, -apple-system, sans-serif;">
+      <h1 style="color: #111; font-size: 24px; margin-bottom: 16px;">${post.title}</h1>
+      <img 
+        src="${imageUrl}" 
+        alt="${post.title}"
+        style="width: 100%; max-width: 600px; height: auto; border-radius: 8px; margin: 20px 0;"
+      />
+      <p style="color: #666; font-size: 16px; line-height: 1.6; margin: 16px 0;">
+        ${post.smallDescription}
+      </p>
+      <a 
+        href="https://drewfoosblog.vercel.app/blog/${post.currentSlug}"
+        style="display: inline-block; background-color: #0070f3; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; margin-top: 20px;"
+      >
+        Read the full article →
+      </a>
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px; text-align: center;">
+        <p>You're receiving this because you subscribed to Drew's Foos Blog with: ${subscriberEmail}</p>
+        <p>
+          <a 
+            href="https://drewfoosblog.vercel.app/unsubscribe?email=${encodeURIComponent(subscriberEmail)}&token=${encodeURIComponent(unsubscribeToken)}"
+            style="color: #666; text-decoration: underline;"
+          >
+            Unsubscribe from these emails
+          </a>
+        </p>
+      </div>
+    </div>
+  `;
+
+  const text = `
+New Post: ${post.title}
+
+${post.smallDescription}
+
+Read the full article: https://drewfoosblog.vercel.app/blog/${post.currentSlug}
+
+To unsubscribe, visit: https://drewfoosblog.vercel.app/unsubscribe?email=${encodeURIComponent(subscriberEmail)}&token=${encodeURIComponent(unsubscribeToken)}
+  `;
+
+  return { html, text };
+};
+
 export async function POST(req: Request) {
   const SANITY_WEBHOOK_SECRET = process.env.SANITY_WEBHOOK_SECRET;
 
-  // Validate that the secret exists
   if (!SANITY_WEBHOOK_SECRET) {
     console.error("Environment variable SANITY_WEBHOOK_SECRET is not set.");
     return NextResponse.json(
@@ -39,11 +91,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Read the raw body and signature from headers
     const body = await buffer(req.body).toString();
     const signature = req.headers.get(SIGNATURE_HEADER_NAME);
 
-    // Verify the webhook signature
     if (!signature || !isValidSignature(body, signature, SANITY_WEBHOOK_SECRET)) {
       console.error("Webhook authentication failed", {
         providedSignature: signature,
@@ -56,7 +106,6 @@ export async function POST(req: Request) {
 
     console.log("Webhook authentication successful");
 
-    // Fetch the latest blog post
     const latestPost = await client.fetch(`
       *[_type == "blog"] | order(publishedAt desc)[0] {
         title,
@@ -67,9 +116,12 @@ export async function POST(req: Request) {
       }
     `);
 
-    // Fetch active subscribers
-    const subscribers = await client.fetch<string[]>(`
-      *[_type == "subscriber" && status == "active"].email
+    // Fetch active subscribers with their unsubscribe tokens
+    const subscribers = await client.fetch<Subscriber[]>(`
+      *[_type == "subscriber" && status == "active"] {
+        email,
+        unsubscribeToken
+      }
     `);
 
     if (!subscribers || subscribers.length === 0) {
@@ -82,50 +134,29 @@ export async function POST(req: Request) {
     console.log(`Found ${subscribers.length} active subscribers.`);
 
     const imageUrl = urlFor(latestPost.titleImage).width(600).url();
-
-    // Create the email content
-    const emailHtml = `
-      <div style="max-width: 600px; margin: 0 auto; font-family: system-ui, -apple-system, sans-serif;">
-        <h1 style="color: #111; font-size: 24px; margin-bottom: 16px;">${latestPost.title}</h1>
-        <img 
-          src="${imageUrl}" 
-          alt="${latestPost.title}"
-          style="width: 100%; max-width: 600px; height: auto; border-radius: 8px; margin: 20px 0;"
-        />
-        <p style="color: #666; font-size: 16px; line-height: 1.6; margin: 16px 0;">
-          ${latestPost.smallDescription}
-        </p>
-        <a 
-          href="https://drewfoosblog.vercel.app/blog/${latestPost.currentSlug}"
-          style="display: inline-block; background-color: #0070f3; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; margin-top: 20px;"
-        >
-          Read the full article →
-        </a>
-      </div>
-    `;
-
-    const emailText = `
-New Post: ${latestPost.title}
-
-${latestPost.smallDescription}
-
-Read the full article: https://drewfoosblog.vercel.app/blog/${latestPost.currentSlug}
-    `;
-
     const sentBatches = [];
 
+    // Send emails in batches
     for (let i = 0; i < subscribers.length; i += BATCH_SIZE) {
       const batch = subscribers.slice(i, i + BATCH_SIZE);
       console.log(`Sending batch ${Math.floor(i / BATCH_SIZE) + 1} with ${batch.length} recipients...`);
 
       try {
+        // Get email content for the first recipient in the batch
+        const { html: firstHtml, text: firstText } = getEmailContent(
+          latestPost,
+          imageUrl,
+          batch[0].email,
+          batch[0].unsubscribeToken
+        );
+
         await resend.emails.send({
           from: "drewfoosBlog <onboarding@resend.dev>",
-          to: batch[0],
-          cc: batch.slice(1),
+          to: batch[0].email,
+          cc: batch.length > 1 ? batch.slice(1).map(s => s.email) : undefined,
           subject: `New Post: ${latestPost.title}`,
-          html: emailHtml,
-          text: emailText,
+          html: firstHtml,
+          text: firstText,
         });
 
         sentBatches.push({
