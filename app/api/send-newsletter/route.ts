@@ -120,7 +120,7 @@ Read the full article: https://drewfoosblog.vercel.app/blog/${latestPost.current
 
       try {
         await resend.emails.send({
-          from: "Andrew Blog <onboarding@resend.dev>",
+          from: "drewfoosBlog <onboarding@resend.dev>",
           to: batch[0],
           cc: batch.slice(1),
           subject: `New Post: ${latestPost.title}`,

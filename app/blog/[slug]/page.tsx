@@ -159,7 +159,7 @@ export default async function BlogArticle({
       </div>
 
       {/* Article Footer */}
-      <footer className="mt-16 pt-8 border-t">
+      <footer className="mt-16 pt-8 border-t pb-8">
         <div className="flex items-center justify-between gap-4">
           <Link 
             href="/" 
