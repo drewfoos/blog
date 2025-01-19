@@ -1,7 +1,7 @@
 // app/unsubscribe/unsubscribe-content.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function UnsubscribeContent() {
@@ -13,13 +13,7 @@ export default function UnsubscribeContent() {
   const email = searchParams.get('email');
   const token = searchParams.get('token');
 
-  useEffect(() => {
-    if (email && token) {
-      handleUnsubscribe();
-    }
-  }, [email, token]);
-
-  async function handleUnsubscribe() {
+  const handleUnsubscribe = useCallback(async () => {
     if (!email || !token) return;
    
     setStatus('loading');
@@ -46,7 +40,13 @@ export default function UnsubscribeContent() {
       setStatus('error');
       setMessage('An error occurred while processing your request.');
     }
-  }
+  }, [email, token]);
+
+  useEffect(() => {
+    if (email && token) {
+      handleUnsubscribe();
+    }
+  }, [email, token, handleUnsubscribe]);
 
   if (!email || !token) {
     return (
