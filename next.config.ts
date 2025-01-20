@@ -13,7 +13,6 @@ const nextConfig: NextConfig = {
   headers: async () => {
     return [
       {
-        // Applies to all routes
         source: "/:path*",
         headers: [
           {
@@ -31,7 +30,6 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Applies to API routes
         source: "/api/:path*",
         headers: [
           {
@@ -51,3 +49,5 @@ const nextConfig: NextConfig = {
     ];
   },
 };
+
+export default nextConfig;
