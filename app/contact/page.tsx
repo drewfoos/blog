@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import dynamic from 'next/dynamic';
+import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
 import { useForm } from "react-hook-form";
 import {
   Card,
@@ -13,18 +13,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Mail, User, MessageSquare } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { TurnstileInstance } from "@marsidev/react-turnstile";
-
-// Dynamically import Turnstile with no SSR
-const Turnstile = dynamic(
-  () => import("@marsidev/react-turnstile").then(mod => mod.Turnstile),
-  { 
-    ssr: false,
-    loading: () => <div className="min-h-[65px]" /> 
-  }
-);
+import { motion, AnimatePresence } from "framer-motion";
 
 type FormData = {
   name: string;
@@ -38,17 +29,11 @@ export default function ContactPage() {
   const [submitStatus, setSubmitStatus] = useState<"success" | "error" | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isClient, setIsClient] = useState(false);
-  const [showTurnstile, setShowTurnstile] = useState(false);
   const turnstileRef = useRef<TurnstileInstance | null>(null);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
-
-  // Load Turnstile when user starts interacting with form
-  const handleFormFocus = () => {
-    setShowTurnstile(true);
-  };
 
   const {
     register,
@@ -57,7 +42,6 @@ export default function ContactPage() {
     formState: { errors },
   } = useForm<FormData>();
 
-  // Reset Turnstile on error or after timeout
   useEffect(() => {
     if (submitStatus === "error" && turnstileRef.current) {
       turnstileRef.current.reset();
@@ -108,13 +92,11 @@ export default function ContactPage() {
 
       setSubmitStatus("success");
       reset();
-      setShowTurnstile(false); // Reset visibility
 
       if (turnstileRef.current) {
         turnstileRef.current.reset();
       }
     } catch (error) {
-      console.error("Error sending form:", error);
       setSubmitStatus("error");
       setErrorMessage(error instanceof Error ? error.message : "Failed to send message");
 
@@ -135,144 +117,211 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="max-w-[1200px] mx-auto px-4">
-      <div className="max-w-2xl mx-auto space-y-8">
-        <div className="space-y-4 text-center">
-          <h1 className="text-4xl font-serif">Get in Touch</h1>
-          <p className="text-muted-foreground">
-            Have a question or just want to say hello? I&apos;d love to hear from you.
-          </p>
+    <main className="relative min-h-[calc(100vh-4rem)] mb-3">
+      {/* Background with subtle gradient */}
+      <div className="absolute inset-0" aria-hidden="true" />
+      
+      {/* Content */}
+      <div className="relative w-full py-12 sm:py-16 lg:py-20">
+        <div className="container mx-auto px-4 max-w-2xl">
+          {/* Header */}
+          <motion.header 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="space-y-4 text-center mb-12"
+          >
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight">
+              Get in Touch
+            </h1>
+            <p className="text-base sm:text-lg text-muted-foreground/80 max-w-md mx-auto">
+              Have a question or just want to say hello? I&apos;d love to hear from you.
+            </p>
+          </motion.header>
+
+          {/* Contact Form Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Card className="border-border/50">
+              <CardHeader className="space-y-3">
+                <CardTitle className="text-xl sm:text-2xl font-medium tracking-tight">
+                  Contact Form
+                </CardTitle>
+                <CardDescription className="text-base text-muted-foreground/80">
+                  Fill out the form below and I&apos;ll get back to you as soon as possible.
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="pt-6">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                  {/* Honeypot */}
+                  <div className="hidden">
+                    <Input
+                      {...register("website")}
+                      type="text"
+                      autoComplete="off"
+                      tabIndex={-1}
+                      aria-hidden="true"
+                    />
+                  </div>
+
+                  {/* Name Input */}
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                      <Input
+                        {...register("name", { required: "Name is required" })}
+                        placeholder="Your name"
+                        className="pl-9 h-11 bg-transparent"
+                        aria-label="Your name"
+                      />
+                    </div>
+                    {errors.name && (
+                      <motion.p 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="text-sm font-medium text-destructive"
+                      >
+                        {errors.name.message}
+                      </motion.p>
+                    )}
+                  </div>
+
+                  {/* Email Input */}
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                      <Input
+                        {...register("email", {
+                          required: "Email is required",
+                          pattern: {
+                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                            message: "Invalid email address",
+                          },
+                        })}
+                        type="email"
+                        placeholder="Your email"
+                        className="pl-9 h-11 bg-transparent"
+                        aria-label="Your email address"
+                      />
+                    </div>
+                    {errors.email && (
+                      <motion.p 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="text-sm font-medium text-destructive"
+                      >
+                        {errors.email.message}
+                      </motion.p>
+                    )}
+                  </div>
+
+                  {/* Message Input */}
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <MessageSquare className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/50" />
+                      <Textarea
+                        {...register("message", { required: "Message is required" })}
+                        placeholder="Your message"
+                        className="pl-9 min-h-[150px] bg-transparent resize-y"
+                        aria-label="Your message"
+                      />
+                    </div>
+                    {errors.message && (
+                      <motion.p 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="text-sm font-medium text-destructive"
+                      >
+                        {errors.message.message}
+                      </motion.p>
+                    )}
+                  </div>
+
+                  {/* Status Alerts */}
+                  <AnimatePresence mode="wait">
+                    {submitStatus === "success" && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                      >
+                        <Alert variant="default" className="border-green-500/30 text-green-600 dark:text-green-400">
+                          <CheckCircle2 className="h-4 w-4" />
+                          <AlertTitle className="font-medium">Success!</AlertTitle>
+                          <AlertDescription>
+                            Your message has been sent successfully. I&apos;ll get back to you soon.
+                          </AlertDescription>
+                        </Alert>
+                      </motion.div>
+                    )}
+
+                    {submitStatus === "error" && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                      >
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertTitle className="font-medium">Error</AlertTitle>
+                          <AlertDescription>
+                            {errorMessage || "Failed to send message. Please try again later."}
+                          </AlertDescription>
+                        </Alert>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Turnstile */}
+                  <div aria-label="Security verification">
+                    {isClient && window.location.hostname !== "localhost" && (
+                      <Turnstile
+                        ref={turnstileRef}
+                        siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY!}
+                        onError={handleTurnstileError}
+                        options={{
+                          theme: "auto",
+                          retry: "auto",
+                          appearance: "always",
+                          refreshExpired: "auto",
+                          language: "auto",
+                          size: "normal",
+                          execution: "render",
+                        }}
+                      />
+                    )}
+                  </div>
+
+                  {/* Submit Button */}
+                  <Button
+                    type="submit"
+                    className="w-full h-11 text-base font-medium"
+                    disabled={isSubmitting}
+                    aria-label={isSubmitting ? "Sending message..." : "Send message"}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      "Send Message"
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Contact Form</CardTitle>
-            <CardDescription>
-              Fill out the form below and I&apos;ll get back to you as soon as possible.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" onFocus={handleFormFocus}>
-              {/* Rest of your form fields stay the same */}
-              <div className="hidden">
-                <Input {...register("website")} type="text" autoComplete="off" tabIndex={-1} aria-hidden="true" />
-              </div>
-
-              <div className="space-y-2">
-                <Input
-                  {...register("name", { required: "Name is required" })}
-                  placeholder="Your name"
-                  className={errors.name ? "border-red-500" : ""}
-                  aria-label="Your name"
-                />
-                {errors.name && (
-                  <p className="text-sm text-red-500" role="alert">{errors.name.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Input
-                  {...register("email", {
-                    required: "Email is required",
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: "Invalid email address",
-                    },
-                  })}
-                  type="email"
-                  placeholder="Your email"
-                  className={errors.email ? "border-red-500" : ""}
-                  aria-label="Your email address"
-                />
-                {errors.email && (
-                  <p className="text-sm text-red-500" role="alert">{errors.email.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Textarea
-                  {...register("message", { required: "Message is required" })}
-                  placeholder="Your message"
-                  className={errors.message ? "border-red-500" : ""}
-                  rows={6}
-                  aria-label="Your message"
-                />
-                {errors.message && (
-                  <p className="text-sm text-red-500" role="alert">{errors.message.message}</p>
-                )}
-              </div>
-
-              {submitStatus === "success" && (
-                <Alert
-                  variant="default"
-                  className="bg-green-500/15 text-green-500 border-green-500/50"
-                  role="alert"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  <AlertTitle>Success!</AlertTitle>
-                  <AlertDescription>
-                    Your message has been sent successfully. I&apos;ll get back to you soon.
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {submitStatus === "error" && (
-                <Alert variant="destructive" role="alert">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>
-                    {errorMessage || "Failed to send message. Please try again later."}
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <div className="min-h-[65px] px-4 py-2 sm:p-0" aria-label="Security verification">
-                {isClient && showTurnstile && window.location.hostname !== "localhost" && (
-                  <Turnstile
-                    ref={turnstileRef}
-                    siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY!}
-                    onError={handleTurnstileError}
-                    options={{
-                      theme: "auto",
-                      retry: "auto",
-                      appearance: "always",
-                      refreshExpired: "auto",
-                      language: "auto",
-                      size: "normal",
-                      execution: "render"
-                    }}
-                    onSuccess={(token) => {
-                      console.log("Turnstile token generated:", token?.slice(0, 10) + "...");
-                    }}
-                    onExpire={() => {
-                      console.log("Turnstile token expired");
-                      if (turnstileRef.current) {
-                        turnstileRef.current.reset();
-                      }
-                    }}
-                  />
-                )}
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isSubmitting}
-                aria-label={isSubmitting ? "Sending message..." : "Send message"}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  "Send Message"
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
       </div>
-    </div>
-  );
+    </main>
+);
+
 }
