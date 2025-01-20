@@ -255,7 +255,6 @@ export default function ContactPage() {
                       language: "auto",
                       size: "normal",
                       execution: "render",
-                      cData: window.location.hostname,
                     }}
                     onSuccess={(token) => {
                       console.log(
