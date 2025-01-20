@@ -54,6 +54,7 @@ export default async function Home(): Promise<ReactElement> {
                   src={urlFor(featuredPost.titleImage).url()}
                   alt={featuredPost.title}
                   fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
                   className="object-cover transition duration-500 hover:scale-105"
                   priority
                 />
@@ -105,6 +106,7 @@ export default async function Home(): Promise<ReactElement> {
                       src={urlFor(post.titleImage).url()}
                       alt={post.title}
                       fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="object-cover transition duration-500 hover:scale-105"
                     />
                   </div>

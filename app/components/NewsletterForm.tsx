@@ -6,11 +6,19 @@ import { toast } from "sonner";
 
 export default function NewsletterForm() {
   const [email, setEmail] = useState('');
+  const [website, setWebsite] = useState(''); // honeypot field
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+   
+    // Honeypot check
+    if (website) {
+      // Silently reject bot submissions
+      setEmail('');
+      return;
+    }
+
     if (!email) {
       toast.error('Please enter your email address');
       return;
@@ -44,10 +52,22 @@ export default function NewsletterForm() {
         <div className="bg-muted/50 rounded-lg px-6 py-8 sm:px-8">
           <h2 className="text-2xl font-serif mb-4">Stay Informed</h2>
           <p className="text-muted-foreground text-sm mb-6">
-            Subscribe to receive thoughtful insights on technology and development, 
+            Subscribe to receive thoughtful insights on technology and development,
             delivered directly to your inbox.
           </p>
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            {/* Honeypot field - hidden from real users */}
+            <div className="hidden" aria-hidden="true">
+              <input
+                type="text"
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+              />
+            </div>
+
             <input
               type="email"
               placeholder="Enter your email"
@@ -55,10 +75,11 @@ export default function NewsletterForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
+              aria-label="Email address"
             />
-            <Button 
-              type="submit" 
-              size="sm" 
+            <Button
+              type="submit"
+              size="sm"
               className="font-medium"
               disabled={isLoading}
             >

@@ -93,6 +93,7 @@ export default async function BlogArticle({
           alt={data.title}
           fill
           priority
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 85vw, 800px"
           className="object-cover"
         />
       </div>
@@ -133,6 +134,7 @@ export default async function BlogArticle({
                     src={urlFor(value).url()}
                     alt={value.alt || ''}
                     fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 85vw, 800px"
                     className="object-cover"
                   />
                   {value.caption && (
