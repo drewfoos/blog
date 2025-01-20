@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useRef, useEffect } from "react";
 import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
 import { useForm } from "react-hook-form";
@@ -14,7 +12,7 @@ type FormData = {
   name: string;
   email: string;
   message: string;
-  website: string; // honeypot field
+  website: string;
 };
 
 export default function ContactPage() {
@@ -35,11 +33,8 @@ export default function ContactPage() {
   } = useForm<FormData>();
 
   const onSubmit = async (data: FormData) => {
-    // If honeypot field is filled, silently reject
-    if (data.website) {
-      return;
-    }
-
+    if (data.website) return;
+    
     setIsSubmitting(true);
     setSubmitStatus(null);
 
@@ -47,8 +42,6 @@ export default function ContactPage() {
       const token = isClient && window.location.hostname === 'localhost'
         ? 'development'
         : turnstileRef.current?.getResponse();
-
-      console.log('Submitting form with token:', token ? 'Present' : 'Not present');
 
       const response = await fetch('/api/contact', {
         method: 'POST',
@@ -63,10 +56,8 @@ export default function ContactPage() {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to send message');
-      }
-
+      if (!response.ok) throw new Error('Failed to send message');
+      
       setSubmitStatus('success');
       reset();
     } catch (error) {
@@ -83,7 +74,7 @@ export default function ContactPage() {
         <div className="space-y-4 text-center">
           <h1 className="text-4xl font-serif">Get in Touch</h1>
           <p className="text-muted-foreground">
-            Have a question or just want to say hello? I&#39;d love to hear from you.
+            Have a question or just want to say hello? I'd love to hear from you.
           </p>
         </div>
 
@@ -91,12 +82,11 @@ export default function ContactPage() {
           <CardHeader>
             <CardTitle>Contact Form</CardTitle>
             <CardDescription>
-              Fill out the form below and I&#39;ll get back to you as soon as possible.
+              Fill out the form below and I'll get back to you as soon as possible.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              {/* Honeypot field - hidden from users */}
               <div className="hidden">
                 <Input
                   {...register('website')}
@@ -151,7 +141,7 @@ export default function ContactPage() {
                   <CheckCircle2 className="h-4 w-4" />
                   <AlertTitle>Success!</AlertTitle>
                   <AlertDescription>
-                    Your message has been sent successfully. I&#39;ll get back to you soon.
+                    Your message has been sent successfully. I'll get back to you soon.
                   </AlertDescription>
                 </Alert>
               )}
@@ -166,21 +156,18 @@ export default function ContactPage() {
                 </Alert>
               )}
 
-              {/* Turnstile - Only show in production */}
-              {isClient && window.location.hostname !== 'localhost' && (
-                <div className="mb-6">
+              {/* Pre-allocated space for Turnstile */}
+              <div className="min-h-[65px] px-4 py-2 sm:p-0">
+                {isClient && window.location.hostname !== 'localhost' && (
                   <Turnstile
                     ref={turnstileRef}
                     siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY!}
                     options={{
                       theme: 'auto',
                     }}
-                    onSuccess={(token) => {
-                      console.log('Turnstile verification successful:', token);
-                    }}
                   />
-                </div>
-              )}
+                )}
+              </div>
 
               <Button
                 type="submit"
