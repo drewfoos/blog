@@ -25,33 +25,38 @@ interface TurnstileVerifyResponse {
 }
 
 async function validateTurnstileToken(token: string, req: Request): Promise<TurnstileVerifyResponse> {
-  const formData = new URLSearchParams();
-  formData.append('secret', process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY!);
-  formData.append('response', token);
-  formData.append('remoteip', req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || '');
-
-  try {
-    const result = await fetch(
-      'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-      {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+    const formData = new URLSearchParams();
+    formData.append('secret', process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY!);
+    formData.append('response', token);
+    
+    // Use the request parameter to get the IP
+    const clientIp = req.headers.get('cf-connecting-ip') || 
+                    req.headers.get('x-forwarded-for') || 
+                    'unknown';
+    formData.append('remoteip', clientIp);
+  
+    try {
+      const result = await fetch(
+        'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+        {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
+  
+      if (!result.ok) {
+        throw new Error(`Turnstile verification failed: ${result.status}`);
       }
-    );
-
-    if (!result.ok) {
-      throw new Error(`Turnstile verification failed: ${result.status}`);
+  
+      return result.json();
+    } catch (error) {
+      console.error('Turnstile verification error:', error);
+      throw error;
     }
-
-    return result.json();
-  } catch (error) {
-    console.error('Turnstile verification error:', error);
-    throw error;
   }
-}
 
 export async function POST(req: Request) {
   try {
@@ -279,16 +284,16 @@ ${sanitizedMessage}
 }
 
 // Handle OPTIONS requests for CORS
-export async function OPTIONS(request: Request) {
-  return NextResponse.json(
-    {},
-    {
-      headers: {
-        'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || "https://drewfoosblog.vercel.app",
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, CF-Challenge',
-        'Access-Control-Max-Age': '86400',
+export async function OPTIONS() {  // Removed unused 'request' parameter
+    return NextResponse.json(
+      {},
+      {
+        headers: {
+          'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || "https://drewfoosblog.vercel.app",
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, CF-Challenge',
+          'Access-Control-Max-Age': '86400',
+        },
       },
-    },
-  );
-}
+    );
+  }
