@@ -112,13 +112,6 @@ export async function POST(req: Request) {
 
     const { name, email, message, token } = await req.json();
 
-    console.log('Received form data:', { 
-      nameLength: name?.length,
-      emailLength: email?.length,
-      messageLength: message?.length,
-      hasToken: !!token
-    });
-
     // Basic validation
     if (!name || !email || !message || 
         typeof name !== 'string' || 

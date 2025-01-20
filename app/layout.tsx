@@ -56,7 +56,6 @@ export default function RootLayout({
               className: "bg-primary text-white", // Tailwind classes for primary color
             }}
           />
-          ;
         </ThemeProvider>
       </body>
     </html>

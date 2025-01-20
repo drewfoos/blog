@@ -7,8 +7,8 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "cdn.sanity.io",
         port: "",
-      }
-    ]
+      },
+    ],
   },
   headers: async () => {
     return [
@@ -29,21 +29,20 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Permissions-Policy",
-            value: "autoplay=(), cross-origin-isolated=(), camera=(), microphone=(), geolocation=()"
+            value: "accelerometer=(), autoplay=(), payment=(), usb=()"
           },
           {
             key: "Cross-Origin-Embedder-Policy",
-            value: "credentialless"
+            value: "require-corp",
           },
           {
             key: "Cross-Origin-Opener-Policy",
-            value: "same-origin"
+            value: "same-origin",
           },
           {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              // Allow eval for Next.js and Cloudflare
               "script-src 'self' https://*.cloudflare.com 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
               "frame-src 'self' https://*.cloudflare.com",
@@ -54,9 +53,9 @@ const nextConfig: NextConfig = {
               "form-action 'self'",
               "frame-ancestors 'none'",
               "object-src 'none'",
-              "upgrade-insecure-requests"
-            ].join('; ')
-          }
+              "upgrade-insecure-requests",
+            ].join("; "),
+          },
         ],
       },
       {
@@ -64,7 +63,9 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Access-Control-Allow-Origin",
-            value: process.env.NEXT_PUBLIC_APP_URL || "https://drewfoosblog.vercel.app",
+            value:
+              process.env.NEXT_PUBLIC_APP_URL ||
+              "https://drewfoosblog.vercel.app",
           },
           {
             key: "Access-Control-Allow-Methods",
@@ -76,8 +77,8 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Cross-Origin-Resource-Policy",
-            value: "cross-origin"
-          }
+            value: "cross-origin",
+          },
         ],
       },
     ];
