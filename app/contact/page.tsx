@@ -48,6 +48,8 @@ export default function ContactPage() {
         ? 'development'
         : turnstileRef.current?.getResponse();
 
+      console.log('Submitting form with token:', token ? 'Present' : 'Not present');
+
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: {
@@ -57,7 +59,7 @@ export default function ContactPage() {
           name: data.name,
           email: data.email,
           message: data.message,
-          token
+          token,
         }),
       });
 
@@ -67,7 +69,8 @@ export default function ContactPage() {
 
       setSubmitStatus('success');
       reset();
-    } catch {
+    } catch (error) {
+      console.error('Error sending form:', error);
       setSubmitStatus('error');
     } finally {
       setIsSubmitting(false);
@@ -170,7 +173,10 @@ export default function ContactPage() {
                     ref={turnstileRef}
                     siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY!}
                     options={{
-                      theme: 'auto'
+                      theme: 'auto',
+                    }}
+                    onSuccess={(token) => {
+                      console.log('Turnstile verification successful:', token);
                     }}
                   />
                 </div>
