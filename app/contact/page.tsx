@@ -25,7 +25,9 @@ type FormData = {
 
 export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<"success" | "error" | null>(null);
+  const [submitStatus, setSubmitStatus] = useState<"success" | "error" | null>(
+    null
+  );
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isClient, setIsClient] = useState(false);
   const turnstileRef = useRef<TurnstileInstance | null>(null);
@@ -41,24 +43,34 @@ export default function ContactPage() {
     formState: { errors },
   } = useForm<FormData>();
 
-  // Reset Turnstile on error
+  // Reset Turnstile on error or after timeout
   useEffect(() => {
     if (submitStatus === "error" && turnstileRef.current) {
       turnstileRef.current.reset();
     }
+
+    // Reset success message after 5 seconds
+    if (submitStatus === "success") {
+      const timer = setTimeout(() => {
+        setSubmitStatus(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
   }, [submitStatus]);
 
   const onSubmit = async (data: FormData) => {
-    if (data.website) return;
+    if (data.website) return; // Honeypot check
 
     setIsSubmitting(true);
     setSubmitStatus(null);
     setErrorMessage("");
 
     try {
-      const token = isClient && window.location.hostname === "localhost"
-        ? "development"
-        : turnstileRef.current?.getResponse();
+      // Get Turnstile token
+      const token =
+        isClient && window.location.hostname === "localhost"
+          ? "development"
+          : turnstileRef.current?.getResponse();
 
       // Check for token in production
       if (!token && window.location.hostname !== "localhost") {
@@ -86,7 +98,7 @@ export default function ContactPage() {
 
       setSubmitStatus("success");
       reset();
-      
+
       // Reset Turnstile after successful submission
       if (turnstileRef.current) {
         turnstileRef.current.reset();
@@ -94,8 +106,10 @@ export default function ContactPage() {
     } catch (error) {
       console.error("Error sending form:", error);
       setSubmitStatus("error");
-      setErrorMessage(error instanceof Error ? error.message : "Failed to send message");
-      
+      setErrorMessage(
+        error instanceof Error ? error.message : "Failed to send message"
+      );
+
       // Reset Turnstile on error
       if (turnstileRef.current) {
         turnstileRef.current.reset();
@@ -108,6 +122,9 @@ export default function ContactPage() {
   const handleTurnstileError = () => {
     setSubmitStatus("error");
     setErrorMessage("Captcha verification failed. Please try again.");
+    if (turnstileRef.current) {
+      turnstileRef.current.reset();
+    }
   };
 
   return (
@@ -116,7 +133,8 @@ export default function ContactPage() {
         <div className="space-y-4 text-center">
           <h1 className="text-4xl font-serif">Get in Touch</h1>
           <p className="text-muted-foreground">
-            Have a question or just want to say hello? I&apos;d love to hear from you.
+            Have a question or just want to say hello? I&apos;d love to hear
+            from you.
           </p>
         </div>
 
@@ -124,16 +142,20 @@ export default function ContactPage() {
           <CardHeader>
             <CardTitle>Contact Form</CardTitle>
             <CardDescription>
-              Fill out the form below and I&apos;ll get back to you as soon as possible.
+              Fill out the form below and I&apos;ll get back to you as soon as
+              possible.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {/* Honeypot field */}
               <div className="hidden">
                 <Input
                   {...register("website")}
                   type="text"
                   autoComplete="off"
+                  tabIndex={-1}
+                  aria-hidden="true"
                 />
               </div>
 
@@ -142,9 +164,12 @@ export default function ContactPage() {
                   {...register("name", { required: "Name is required" })}
                   placeholder="Your name"
                   className={errors.name ? "border-red-500" : ""}
+                  aria-label="Your name"
                 />
                 {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name.message}</p>
+                  <p className="text-sm text-red-500" role="alert">
+                    {errors.name.message}
+                  </p>
                 )}
               </div>
 
@@ -160,9 +185,12 @@ export default function ContactPage() {
                   type="email"
                   placeholder="Your email"
                   className={errors.email ? "border-red-500" : ""}
+                  aria-label="Your email address"
                 />
                 {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email.message}</p>
+                  <p className="text-sm text-red-500" role="alert">
+                    {errors.email.message}
+                  </p>
                 )}
               </div>
 
@@ -172,9 +200,12 @@ export default function ContactPage() {
                   placeholder="Your message"
                   className={errors.message ? "border-red-500" : ""}
                   rows={6}
+                  aria-label="Your message"
                 />
                 {errors.message && (
-                  <p className="text-sm text-red-500">{errors.message.message}</p>
+                  <p className="text-sm text-red-500" role="alert">
+                    {errors.message.message}
+                  </p>
                 )}
               </div>
 
@@ -182,35 +213,61 @@ export default function ContactPage() {
                 <Alert
                   variant="default"
                   className="bg-green-500/15 text-green-500 border-green-500/50"
+                  role="alert"
                 >
                   <CheckCircle2 className="h-4 w-4" />
                   <AlertTitle>Success!</AlertTitle>
                   <AlertDescription>
-                    Your message has been sent successfully. I&apos;ll get back to you soon.
+                    Your message has been sent successfully. I&apos;ll get back
+                    to you soon.
                   </AlertDescription>
                 </Alert>
               )}
 
               {submitStatus === "error" && (
-                <Alert variant="destructive">
+                <Alert variant="destructive" role="alert">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Error</AlertTitle>
                   <AlertDescription>
-                    {errorMessage || "Failed to send message. Please try again later."}
+                    {errorMessage ||
+                      "Failed to send message. Please try again later."}
                   </AlertDescription>
                 </Alert>
               )}
 
-              {/* Pre-allocated space for Turnstile */}
-              <div className="min-h-[65px] px-4 py-2 sm:p-0">
+              {/* Turnstile container with pre-allocated space */}
+              <div
+                className="min-h-[65px] px-4 py-2 sm:p-0"
+                aria-label="Security verification"
+              >
                 {isClient && window.location.hostname !== "localhost" && (
                   <Turnstile
                     ref={turnstileRef}
-                    siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY!}
+                    siteKey={
+                      process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY!
+                    }
                     onError={handleTurnstileError}
                     options={{
                       theme: "auto",
                       retry: "auto",
+                      appearance: "always",
+                      refreshExpired: "auto",
+                      language: "auto",
+                      size: "normal",
+                      execution: "render",
+                      cData: window.location.hostname,
+                    }}
+                    onSuccess={(token) => {
+                      console.log(
+                        "Turnstile token generated:",
+                        token?.slice(0, 10) + "..."
+                      );
+                    }}
+                    onExpire={() => {
+                      console.log("Turnstile token expired");
+                      if (turnstileRef.current) {
+                        turnstileRef.current.reset();
+                      }
                     }}
                   />
                 )}
@@ -220,6 +277,9 @@ export default function ContactPage() {
                 type="submit"
                 className="w-full"
                 disabled={isSubmitting}
+                aria-label={
+                  isSubmitting ? "Sending message..." : "Send message"
+                }
               >
                 {isSubmitting ? (
                   <>

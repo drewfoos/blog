@@ -27,6 +27,36 @@ const nextConfig: NextConfig = {
             key: "Referrer-Policy",
             value: "strict-origin-when-cross-origin",
           },
+          {
+            key: "Permissions-Policy",
+            value: "autoplay=(), cross-origin-isolated=(), camera=(), microphone=(), geolocation=()"
+          },
+          {
+            key: "Cross-Origin-Embedder-Policy",
+            value: "credentialless"
+          },
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin"
+          },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              // Allow eval for Next.js and Cloudflare
+              "script-src 'self' https://*.cloudflare.com 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline'",
+              "frame-src 'self' https://*.cloudflare.com",
+              "connect-src 'self' https://*.cloudflare.com",
+              "img-src 'self' https://cdn.sanity.io data: blob:",
+              "font-src 'self'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'none'",
+              "object-src 'none'",
+              "upgrade-insecure-requests"
+            ].join('; ')
+          }
         ],
       },
       {
@@ -42,8 +72,12 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Access-Control-Allow-Headers",
-            value: "Content-Type",
+            value: "Content-Type, CF-Challenge",
           },
+          {
+            key: "Cross-Origin-Resource-Policy",
+            value: "cross-origin"
+          }
         ],
       },
     ];

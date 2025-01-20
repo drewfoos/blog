@@ -15,53 +15,46 @@ const MAX_NAME_LENGTH = 100;
 const MAX_EMAIL_LENGTH = 254;
 const MAX_MESSAGE_LENGTH = 1000;
 
-// Turnstile validation function with timeout
-async function validateTurnstileToken(token: string) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+interface TurnstileVerifyResponse {
+  success: boolean;
+  "error-codes"?: string[];
+  challenge_ts?: string;
+  hostname?: string;
+  action?: string;
+  cdata?: string;
+}
+
+async function validateTurnstileToken(token: string, req: Request): Promise<TurnstileVerifyResponse> {
+  const formData = new URLSearchParams();
+  formData.append('secret', process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY!);
+  formData.append('response', token);
+  formData.append('remoteip', req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || '');
 
   try {
     const result = await fetch(
       'https://challenges.cloudflare.com/turnstile/v0/siteverify',
       {
         method: 'POST',
-        body: new URLSearchParams({
-          secret: process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY!,
-          response: token,
-        }),
-        signal: controller.signal,
+        body: formData,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
       }
     );
-    
-    clearTimeout(timeout);
+
+    if (!result.ok) {
+      throw new Error(`Turnstile verification failed: ${result.status}`);
+    }
+
     return result.json();
   } catch (error) {
-    clearTimeout(timeout);
+    console.error('Turnstile verification error:', error);
     throw error;
   }
 }
 
-// Security headers
-const securityHeaders = {
-  'Content-Security-Policy': "default-src 'self'; connect-src 'self' https://challenges.cloudflare.com;",
-  'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'DENY',
-  'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
-};
-
 export async function POST(req: Request) {
   try {
-    // Environment check
-    if (!process.env.RESEND_API_KEY) {
-      console.error('Resend API key not configured');
-      return NextResponse.json(
-        { error: "Server configuration error" },
-        { status: 500, headers: securityHeaders }
-      );
-    }
-
     // Rate limiting check
     const ip = req.headers.get('x-forwarded-for') ?? 'anonymous';
     const now = Date.now();
@@ -72,7 +65,13 @@ export async function POST(req: Request) {
         if (userRateLimit.count >= RATE_LIMIT_REQUESTS) {
           return NextResponse.json(
             { error: "Too many requests. Please try again later." },
-            { status: 429, headers: securityHeaders }
+            { 
+              status: 429,
+              headers: {
+                'Retry-After': String(RATE_LIMIT_WINDOW / 1000),
+                'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || "https://drewfoosblog.vercel.app",
+              }
+            }
           );
         }
         userRateLimit.count++;
@@ -97,18 +96,22 @@ export async function POST(req: Request) {
     if (req.headers.get("content-type") !== "application/json") {
       return NextResponse.json(
         { error: "Invalid content type" },
-        { status: 415, headers: securityHeaders }
+        { 
+          status: 415,
+          headers: {
+            'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || "https://drewfoosblog.vercel.app",
+          }
+        }
       );
     }
 
-    // Parse request body
     const { name, email, message, token } = await req.json();
 
     console.log('Received form data:', { 
-      name: name?.slice(0, 20), // Log truncated values for safety
-      email: email?.slice(0, 20),
+      nameLength: name?.length,
+      emailLength: email?.length,
       messageLength: message?.length,
-      hasToken: !!token 
+      hasToken: !!token
     });
 
     // Basic validation
@@ -116,17 +119,14 @@ export async function POST(req: Request) {
         typeof name !== 'string' || 
         typeof email !== 'string' || 
         typeof message !== 'string') {
-      console.log('Validation failed:', { 
-        hasName: !!name, 
-        hasEmail: !!email, 
-        hasMessage: !!message,
-        typeofName: typeof name,
-        typeofEmail: typeof email,
-        typeofMessage: typeof message
-      });
       return NextResponse.json(
         { error: "Missing or invalid fields" },
-        { status: 400, headers: securityHeaders }
+        { 
+          status: 400,
+          headers: {
+            'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || "https://drewfoosblog.vercel.app",
+          }
+        }
       );
     }
 
@@ -136,7 +136,12 @@ export async function POST(req: Request) {
         message.length > MAX_MESSAGE_LENGTH) {
       return NextResponse.json(
         { error: "Input exceeds maximum length" },
-        { status: 400, headers: securityHeaders }
+        { 
+          status: 400,
+          headers: {
+            'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || "https://drewfoosblog.vercel.app",
+          }
+        }
       );
     }
 
@@ -145,42 +150,54 @@ export async function POST(req: Request) {
     if (!emailRegex.test(email)) {
       return NextResponse.json(
         { error: "Invalid email format" },
-        { status: 400, headers: securityHeaders }
+        { 
+          status: 400,
+          headers: {
+            'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || "https://drewfoosblog.vercel.app",
+          }
+        }
       );
     }
 
-    // Turnstile verification (except in development)
+    // Turnstile verification (except localhost)
     if (process.env.NODE_ENV !== 'development') {
-      if (!process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY) {
-        console.error('Turnstile secret key not configured');
-        return NextResponse.json(
-          { error: "Server configuration error" },
-          { status: 500, headers: securityHeaders }
-        );
-      }
-
       if (!token) {
         console.log('No token provided');
         return NextResponse.json(
           { error: "Captcha token required" },
-          { status: 400, headers: securityHeaders }
+          { 
+            status: 400,
+            headers: {
+              'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || "https://drewfoosblog.vercel.app",
+            }
+          }
         );
       }
 
       try {
-        const turnstileResult = await validateTurnstileToken(token);
+        const turnstileResult = await validateTurnstileToken(token, req);
         if (!turnstileResult.success) {
-          console.log('Turnstile validation failed:', turnstileResult);
+          console.log('Turnstile validation failed:', turnstileResult["error-codes"]);
           return NextResponse.json(
-            { error: "Invalid captcha token" },
-            { status: 400, headers: securityHeaders }
+            { error: "Invalid captcha token", details: turnstileResult["error-codes"] },
+            { 
+              status: 400,
+              headers: {
+                'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || "https://drewfoosblog.vercel.app",
+              }
+            }
           );
         }
       } catch (error) {
         console.error('Turnstile verification error:', error);
         return NextResponse.json(
           { error: "Failed to verify captcha" },
-          { status: 500, headers: securityHeaders }
+          { 
+            status: 500,
+            headers: {
+              'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || "https://drewfoosblog.vercel.app",
+            }
+          }
         );
       }
     }
@@ -229,19 +246,49 @@ ${sanitizedMessage}
       console.error('Failed to send email via Resend:', error);
       return NextResponse.json(
         { error: "Failed to send email" },
-        { status: 500, headers: securityHeaders }
+        { 
+          status: 500,
+          headers: {
+            'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || "https://drewfoosblog.vercel.app",
+          }
+        }
       );
     }
 
     return NextResponse.json(
       { message: "Email sent successfully" },
-      { status: 200, headers: securityHeaders }
+      { 
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || "https://drewfoosblog.vercel.app",
+        }
+      }
     );
   } catch (error) {
     console.error("Unexpected error in contact route:", error);
     return NextResponse.json(
       { error: "An unexpected error occurred" },
-      { status: 500, headers: securityHeaders }
+      { 
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || "https://drewfoosblog.vercel.app",
+        }
+      }
     );
   }
+}
+
+// Handle OPTIONS requests for CORS
+export async function OPTIONS(request: Request) {
+  return NextResponse.json(
+    {},
+    {
+      headers: {
+        'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || "https://drewfoosblog.vercel.app",
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, CF-Challenge',
+        'Access-Control-Max-Age': '86400',
+      },
+    },
+  );
 }
