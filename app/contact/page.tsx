@@ -1,4 +1,3 @@
-// app/contact/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -57,7 +56,7 @@ export default function ContactPage() {
 
       setSubmitStatus('success');
       reset();
-    } catch (error) {
+    } catch {
       setSubmitStatus('error');
     } finally {
       setIsSubmitting(false);
@@ -70,7 +69,7 @@ export default function ContactPage() {
         <div className="space-y-4 text-center">
           <h1 className="text-4xl font-serif">Get in Touch</h1>
           <p className="text-muted-foreground">
-            Have a question or just want to say hello? I'd love to hear from you.
+            Have a question or just want to say hello? I&#39;d love to hear from you.
           </p>
         </div>
 
@@ -78,7 +77,7 @@ export default function ContactPage() {
           <CardHeader>
             <CardTitle>Contact Form</CardTitle>
             <CardDescription>
-              Fill out the form below and I'll get back to you as soon as possible.
+              Fill out the form below and I&#39;ll get back to you as soon as possible.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -138,7 +137,7 @@ export default function ContactPage() {
                   <CheckCircle2 className="h-4 w-4" />
                   <AlertTitle>Success!</AlertTitle>
                   <AlertDescription>
-                    Your message has been sent successfully. I'll get back to you soon.
+                    Your message has been sent successfully. I&#39;ll get back to you soon.
                   </AlertDescription>
                 </Alert>
               )}
