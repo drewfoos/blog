@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Turnstile } from "@marsidev/react-turnstile";
+import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
 import { useForm } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | null>(null);
   const [isClient, setIsClient] = useState(false);
-  const turnstileRef = useRef<any>(null);
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -46,7 +46,7 @@ export default function ContactPage() {
     try {
       const token = isClient && window.location.hostname === 'localhost'
         ? 'development'
-        : turnstileRef.current?.getToken();
+        : turnstileRef.current?.getResponse();
 
       const response = await fetch('/api/contact', {
         method: 'POST',
@@ -67,7 +67,7 @@ export default function ContactPage() {
 
       setSubmitStatus('success');
       reset();
-    } catch (error) {
+    } catch {
       setSubmitStatus('error');
     } finally {
       setIsSubmitting(false);
