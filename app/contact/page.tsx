@@ -25,9 +25,8 @@ type FormData = {
 
 export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<"success" | "error" | null>(
-    null
-  );
+  const [submitStatus, setSubmitStatus] = useState<"success" | "error" | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>("");
   const [isClient, setIsClient] = useState(false);
   const turnstileRef = useRef<TurnstileInstance | null>(null);
 
@@ -42,17 +41,29 @@ export default function ContactPage() {
     formState: { errors },
   } = useForm<FormData>();
 
+  // Reset Turnstile on error
+  useEffect(() => {
+    if (submitStatus === "error" && turnstileRef.current) {
+      turnstileRef.current.reset();
+    }
+  }, [submitStatus]);
+
   const onSubmit = async (data: FormData) => {
     if (data.website) return;
 
     setIsSubmitting(true);
     setSubmitStatus(null);
+    setErrorMessage("");
 
     try {
-      const token =
-        isClient && window.location.hostname === "localhost"
-          ? "development"
-          : turnstileRef.current?.getResponse();
+      const token = isClient && window.location.hostname === "localhost"
+        ? "development"
+        : turnstileRef.current?.getResponse();
+
+      // Check for token in production
+      if (!token && window.location.hostname !== "localhost") {
+        throw new Error("Please complete the captcha verification");
+      }
 
       const response = await fetch("/api/contact", {
         method: "POST",
@@ -67,16 +78,36 @@ export default function ContactPage() {
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to send message");
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to send message");
+      }
 
       setSubmitStatus("success");
       reset();
+      
+      // Reset Turnstile after successful submission
+      if (turnstileRef.current) {
+        turnstileRef.current.reset();
+      }
     } catch (error) {
       console.error("Error sending form:", error);
       setSubmitStatus("error");
+      setErrorMessage(error instanceof Error ? error.message : "Failed to send message");
+      
+      // Reset Turnstile on error
+      if (turnstileRef.current) {
+        turnstileRef.current.reset();
+      }
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleTurnstileError = () => {
+    setSubmitStatus("error");
+    setErrorMessage("Captcha verification failed. Please try again.");
   };
 
   return (
@@ -85,8 +116,7 @@ export default function ContactPage() {
         <div className="space-y-4 text-center">
           <h1 className="text-4xl font-serif">Get in Touch</h1>
           <p className="text-muted-foreground">
-            Have a question or just want to say hello? I&apos;d love to hear
-            from you.
+            Have a question or just want to say hello? I&apos;d love to hear from you.
           </p>
         </div>
 
@@ -94,8 +124,7 @@ export default function ContactPage() {
           <CardHeader>
             <CardTitle>Contact Form</CardTitle>
             <CardDescription>
-              Fill out the form below and I&apos;ll get back to you as soon as
-              possible.
+              Fill out the form below and I&apos;ll get back to you as soon as possible.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -145,9 +174,7 @@ export default function ContactPage() {
                   rows={6}
                 />
                 {errors.message && (
-                  <p className="text-sm text-red-500">
-                    {errors.message.message}
-                  </p>
+                  <p className="text-sm text-red-500">{errors.message.message}</p>
                 )}
               </div>
 
@@ -159,8 +186,7 @@ export default function ContactPage() {
                   <CheckCircle2 className="h-4 w-4" />
                   <AlertTitle>Success!</AlertTitle>
                   <AlertDescription>
-                    Your message has been sent successfully. I&apos;ll get back
-                    to you soon.
+                    Your message has been sent successfully. I&apos;ll get back to you soon.
                   </AlertDescription>
                 </Alert>
               )}
@@ -170,7 +196,7 @@ export default function ContactPage() {
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Error</AlertTitle>
                   <AlertDescription>
-                    Failed to send message. Please try again later.
+                    {errorMessage || "Failed to send message. Please try again later."}
                   </AlertDescription>
                 </Alert>
               )}
@@ -180,11 +206,11 @@ export default function ContactPage() {
                 {isClient && window.location.hostname !== "localhost" && (
                   <Turnstile
                     ref={turnstileRef}
-                    siteKey={
-                      process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY!
-                    }
+                    siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY!}
+                    onError={handleTurnstileError}
                     options={{
                       theme: "auto",
+                      retry: "auto",
                     }}
                   />
                 )}
