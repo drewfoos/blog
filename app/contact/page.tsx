@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { useForm } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,12 @@ type FormData = {
 export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | null>(null);
+  const [isClient, setIsClient] = useState(false);
+  const turnstileRef = useRef<any>(null);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const {
     register,
@@ -37,6 +44,10 @@ export default function ContactPage() {
     setSubmitStatus(null);
 
     try {
+      const token = isClient && window.location.hostname === 'localhost'
+        ? 'development'
+        : turnstileRef.current?.getToken();
+
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: {
@@ -46,7 +57,7 @@ export default function ContactPage() {
           name: data.name,
           email: data.email,
           message: data.message,
-          token: 'development' // For localhost testing
+          token
         }),
       });
 
@@ -56,7 +67,7 @@ export default function ContactPage() {
 
       setSubmitStatus('success');
       reset();
-    } catch {
+    } catch (error) {
       setSubmitStatus('error');
     } finally {
       setIsSubmitting(false);
@@ -150,6 +161,19 @@ export default function ContactPage() {
                     Failed to send message. Please try again later.
                   </AlertDescription>
                 </Alert>
+              )}
+
+              {/* Turnstile - Only show in production */}
+              {isClient && window.location.hostname !== 'localhost' && (
+                <div className="mb-6">
+                  <Turnstile
+                    ref={turnstileRef}
+                    siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY!}
+                    options={{
+                      theme: 'auto'
+                    }}
+                  />
+                </div>
               )}
 
               <Button
