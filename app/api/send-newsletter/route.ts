@@ -186,7 +186,7 @@ export async function POST(req: Request) {
             );
 
             await resend.emails.send({
-              from: "Drewfoos Blog <onboarding@resend.dev>",
+              from: "Drewfoos Blog <noreply@andrewdryfoos.dev>",
               to: subscriber.email,
               subject: `New Post: ${latestPost.title}`,
               html,
