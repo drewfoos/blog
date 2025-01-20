@@ -3,7 +3,13 @@
 import { useState, useRef, useEffect } from "react";
 import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
 import { useForm } from "react-hook-form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,7 +25,9 @@ type FormData = {
 
 export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | null>(null);
+  const [submitStatus, setSubmitStatus] = useState<"success" | "error" | null>(
+    null
+  );
   const [isClient, setIsClient] = useState(false);
   const turnstileRef = useRef<TurnstileInstance | null>(null);
 
@@ -36,19 +44,20 @@ export default function ContactPage() {
 
   const onSubmit = async (data: FormData) => {
     if (data.website) return;
-    
+
     setIsSubmitting(true);
     setSubmitStatus(null);
 
     try {
-      const token = isClient && window.location.hostname === 'localhost'
-        ? 'development'
-        : turnstileRef.current?.getResponse();
+      const token =
+        isClient && window.location.hostname === "localhost"
+          ? "development"
+          : turnstileRef.current?.getResponse();
 
-      const response = await fetch('/api/contact', {
-        method: 'POST',
+      const response = await fetch("/api/contact", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: data.name,
@@ -58,13 +67,13 @@ export default function ContactPage() {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to send message');
-      
-      setSubmitStatus('success');
+      if (!response.ok) throw new Error("Failed to send message");
+
+      setSubmitStatus("success");
       reset();
     } catch (error) {
-      console.error('Error sending form:', error);
-      setSubmitStatus('error');
+      console.error("Error sending form:", error);
+      setSubmitStatus("error");
     } finally {
       setIsSubmitting(false);
     }
@@ -76,7 +85,8 @@ export default function ContactPage() {
         <div className="space-y-4 text-center">
           <h1 className="text-4xl font-serif">Get in Touch</h1>
           <p className="text-muted-foreground">
-            Have a question or just want to say hello? I'd love to hear from you.
+            Have a question or just want to say hello? I&apos;d love to hear
+            from you.
           </p>
         </div>
 
@@ -84,14 +94,15 @@ export default function ContactPage() {
           <CardHeader>
             <CardTitle>Contact Form</CardTitle>
             <CardDescription>
-              Fill out the form below and I'll get back to you as soon as possible.
+              Fill out the form below and I&apos;ll get back to you as soon as
+              possible.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="hidden">
                 <Input
-                  {...register('website')}
+                  {...register("website")}
                   type="text"
                   autoComplete="off"
                 />
@@ -99,9 +110,9 @@ export default function ContactPage() {
 
               <div className="space-y-2">
                 <Input
-                  {...register('name', { required: 'Name is required' })}
+                  {...register("name", { required: "Name is required" })}
                   placeholder="Your name"
-                  className={errors.name ? 'border-red-500' : ''}
+                  className={errors.name ? "border-red-500" : ""}
                 />
                 {errors.name && (
                   <p className="text-sm text-red-500">{errors.name.message}</p>
@@ -110,16 +121,16 @@ export default function ContactPage() {
 
               <div className="space-y-2">
                 <Input
-                  {...register('email', {
-                    required: 'Email is required',
+                  {...register("email", {
+                    required: "Email is required",
                     pattern: {
                       value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email address',
+                      message: "Invalid email address",
                     },
                   })}
                   type="email"
                   placeholder="Your email"
-                  className={errors.email ? 'border-red-500' : ''}
+                  className={errors.email ? "border-red-500" : ""}
                 />
                 {errors.email && (
                   <p className="text-sm text-red-500">{errors.email.message}</p>
@@ -128,27 +139,33 @@ export default function ContactPage() {
 
               <div className="space-y-2">
                 <Textarea
-                  {...register('message', { required: 'Message is required' })}
+                  {...register("message", { required: "Message is required" })}
                   placeholder="Your message"
-                  className={errors.message ? 'border-red-500' : ''}
+                  className={errors.message ? "border-red-500" : ""}
                   rows={6}
                 />
                 {errors.message && (
-                  <p className="text-sm text-red-500">{errors.message.message}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.message.message}
+                  </p>
                 )}
               </div>
 
-              {submitStatus === 'success' && (
-                <Alert variant="default" className="bg-green-500/15 text-green-500 border-green-500/50">
+              {submitStatus === "success" && (
+                <Alert
+                  variant="default"
+                  className="bg-green-500/15 text-green-500 border-green-500/50"
+                >
                   <CheckCircle2 className="h-4 w-4" />
                   <AlertTitle>Success!</AlertTitle>
                   <AlertDescription>
-                    Your message has been sent successfully. I'll get back to you soon.
+                    Your message has been sent successfully. I&apos;ll get back
+                    to you soon.
                   </AlertDescription>
                 </Alert>
               )}
 
-              {submitStatus === 'error' && (
+              {submitStatus === "error" && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Error</AlertTitle>
@@ -160,12 +177,14 @@ export default function ContactPage() {
 
               {/* Pre-allocated space for Turnstile */}
               <div className="min-h-[65px] px-4 py-2 sm:p-0">
-                {isClient && window.location.hostname !== 'localhost' && (
+                {isClient && window.location.hostname !== "localhost" && (
                   <Turnstile
                     ref={turnstileRef}
-                    siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY!}
+                    siteKey={
+                      process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY!
+                    }
                     options={{
-                      theme: 'auto',
+                      theme: "auto",
                     }}
                   />
                 )}
@@ -182,7 +201,7 @@ export default function ContactPage() {
                     Sending...
                   </>
                 ) : (
-                  'Send Message'
+                  "Send Message"
                 )}
               </Button>
             </form>
