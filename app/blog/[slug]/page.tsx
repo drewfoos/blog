@@ -125,39 +125,52 @@ export default async function BlogArticle({
         max-w-none
       ">
         <PortableText 
-          value={data.content}
-          components={{
-            types: {
-              image: ({value}) => (
-                <div className="relative aspect-[16/9] my-12 rounded-lg overflow-hidden">
-                  <Image
-                    src={urlFor(value).url()}
-                    alt={value.alt || ''}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 85vw, 800px"
-                    className="object-cover"
-                  />
-                  {value.caption && (
-                    <p className="text-sm text-center text-muted-foreground mt-4">
-                      {value.caption}
-                    </p>
-                  )}
-                </div>
-              ),
-              code: ({value}) => <CodeBlock value={value} />,
-            },
-            marks: {
-              link: ({value, children}) => {
-                const target = (value?.href || '').startsWith('http') ? '_blank' : undefined;
-                return (
-                  <a href={value?.href} target={target} rel={target === '_blank' ? 'noopener noreferrer' : undefined}>
-                    {children}
-                  </a>
-                );
+        value={data.content}
+        components={{
+          types: {
+            image: ({value}) => {
+              if (!value?.asset?._ref) {
+                return null;
               }
+              
+              return (
+                <figure className="my-8 space-y-3">
+                  <div className="relative aspect-video rounded-lg overflow-hidden">
+                    <Image
+                      src={urlFor(value).url()}
+                      alt={value.alt || 'Blog post image'}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 85vw, 800px"
+                      className="object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                  {value.caption && (
+                    <figcaption className="text-sm text-center text-muted-foreground">
+                      {value.caption}
+                    </figcaption>
+                  )}
+                </figure>
+              );
+            },
+            code: ({value}) => <CodeBlock value={value} />,
+          },
+          marks: {
+            link: ({value, children}) => {
+              const target = (value?.href || '').startsWith('http') ? '_blank' : undefined;
+              return (
+                <a 
+                  href={value?.href} 
+                  target={target} 
+                  rel={target === '_blank' ? 'noopener noreferrer' : undefined}
+                >
+                  {children}
+                </a>
+              );
             }
-          }}
-        />
+          }
+        }}
+      />
       </div>
 
       {/* Article Footer */}
